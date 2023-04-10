@@ -14,13 +14,13 @@ public class SQSController {
     SQSReader sqsReader = new SQSReaderImpl();
 
     @GetMapping("/send")
-    public void sendMessageToQueue(@RequestParam String topic, @RequestParam String message) {
-        sqsReader.sendMessage(topic, message);
+    public void sendMessageToQueue(@RequestParam String topic, @RequestParam String message, @RequestParam String email) {
+        sqsReader.sendMessage(topic, message, email);
     }
 
     @GetMapping("/pull")
     public List<MessageSending> pullMessageToQueue() {
-        return sqsReader.pullMessages(null);
+        return sqsReader.pullMessages();
     }
 
 }

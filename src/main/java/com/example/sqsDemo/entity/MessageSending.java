@@ -12,4 +12,6 @@ import lombok.Setter;
 public class MessageSending {
     private String topic;
     private String message;
+    private String email;
+    private String messageId;
 }

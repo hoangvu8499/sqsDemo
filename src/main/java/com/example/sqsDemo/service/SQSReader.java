@@ -6,6 +6,8 @@ import software.amazon.awssdk.services.sqs.model.Message;
 import java.util.List;
 
 public interface SQSReader {
-    void sendMessage(String topicName, String message);
-    List<MessageSending> pullMessages(String queueUrl);
+    void sendMessage(String topicName, String message, String email);
+    List<MessageSending> pullMessages();
+
+    void deleteMessage(String messageId);
 }

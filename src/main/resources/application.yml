@@ -8,3 +8,15 @@ cloud:
       secret-key: RZlg/+qsDKtLGXgYtrBhCn/wep38UVyrHVzraYcy
     end-point:
       uri: https://sqs.ap-southeast-1.amazonaws.com/037992980630/demo1.fifo
+spring:
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: nacu22984@gmail.com
+    password: syjuacvdteupnesz
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
