@@ -14,4 +14,5 @@ public class MessageSending {
     private String message;
     private String email;
     private String messageId;
+    private String receiptHandle;
 }

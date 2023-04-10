@@ -31,7 +31,7 @@ public class SendEmail {
                 mimeMessage.setSubject("TEST SEND CONTENT SQS");
                 mimeMessage.setFrom("nacu22984@gmail.com");
                 javaMailSender.send(mimeMessage);
-                sqsReader.deleteMessage(messageSending.getMessageId());
+                sqsReader.deleteMessage(messageSending.getMessageId(), messageSending.getReceiptHandle());
             }
         }
     }

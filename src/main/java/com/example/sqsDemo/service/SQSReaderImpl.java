@@ -6,6 +6,7 @@ import com.example.sqsDemo.utils.SQSConstant;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import reactor.core.publisher.Flux;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
@@ -30,7 +31,7 @@ public class SQSReaderImpl implements SQSReader {
 
     @Override
     public void sendMessage(String topicName, String message, String email) {
-        MessageSending messageSending = new MessageSending(topicName, message, email, null);
+        MessageSending messageSending = new MessageSending(topicName, message, email, null, null);
         try {
 
             SendMessageRequest sendMessageRequest = SendMessageRequest.builder()
@@ -60,6 +61,7 @@ public class SQSReaderImpl implements SQSReader {
             for (Message sqsMessage : sqsMessages) {
                 MessageSending messageSending = JsonConverter.convertToObject(sqsMessage.body(), MessageSending.class);
                 messageSending.setMessageId(sqsMessage.messageId());
+                messageSending.setReceiptHandle(sqsMessage.receiptHandle());
                 messages.add(messageSending);
             }
         } catch (Exception e) {
@@ -68,27 +70,36 @@ public class SQSReaderImpl implements SQSReader {
         return messages;
     }
 
-    @Override
-    public void deleteMessage(String messageId) {
-        try {
-            ReceiveMessageRequest receiveRequest = ReceiveMessageRequest.builder()
+    public Flux<MessageSending> pullMessagesWebFlux() {
+        return Flux.defer(() -> {
+            ReceiveMessageRequest receiveMessageRequest = ReceiveMessageRequest.builder()
                     .queueUrl(SQSConstant.ENDPOINT)
-                    .messageAttributeNames("All")
+                    .maxNumberOfMessages(3)
+                    .waitTimeSeconds(20)
                     .build();
-            List<Message> messages = sqsClient.receiveMessage(receiveRequest).messages();
-            Optional<Message> messageToDelete = messages.stream()
-                    .filter(message -> message.messageId().equals(messageId))
-                    .findFirst();
-            if (messageToDelete.isPresent()) {
-                DeleteMessageRequest deleteRequest = DeleteMessageRequest.builder()
-                        .queueUrl(SQSConstant.ENDPOINT)
-                        .receiptHandle(messageToDelete.get().receiptHandle())
-                        .build();
-                sqsClient.deleteMessage(deleteRequest);
-                logger.info("Deleted message with ID " + messageId);
-            } else {
-                logger.info("Message with ID " + messageId + " not found on queue");
-            }
+            List<Message> sqsMessages = sqsClient.receiveMessage(receiveMessageRequest).messages();
+            return Flux.fromIterable(sqsMessages);
+        }).map(sqsMessage -> {
+            MessageSending messageSending = JsonConverter.convertToObject(sqsMessage.body(), MessageSending.class);
+            messageSending.setMessageId(sqsMessage.messageId());
+            messageSending.setReceiptHandle(sqsMessage.receiptHandle());
+            return messageSending;
+        }).onErrorResume(e -> {
+            logger.error("Problem when pulling message", e);
+            return Flux.empty();
+        });
+    }
+
+    @Override
+    public void deleteMessage(String messageId, String receiptHandle) {
+        try {
+            DeleteMessageRequest deleteRequest = DeleteMessageRequest.builder()
+                    .queueUrl(SQSConstant.ENDPOINT)
+                    .receiptHandle(receiptHandle)
+                    .build();
+            sqsClient.deleteMessage(deleteRequest);
+            logger.info("Deleted message with ID " + messageId);
+
         } catch (Exception e) {
             logger.error("Problem when delete message with ID: " + messageId);
         }
