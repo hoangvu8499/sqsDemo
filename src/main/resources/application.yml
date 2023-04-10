@@ -1,0 +1,10 @@
+cloud:
+  aws:
+    region:
+      static: ap-southeast-1
+      auto: false
+    credentials:
+      access-key: AKIAQRWEO4CLMYFZOFOJ
+      secret-key: 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
+    end-point:
+      uri: https://sqs.ap-southeast-1.amazonaws.com/037992980630/demo1.fifo
