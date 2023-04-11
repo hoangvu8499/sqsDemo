@@ -24,7 +24,7 @@ public class SendEmail {
     @Autowired
     private JavaMailSender javaMailSender;
 
-    SQSReader sqsReader = new SQSReaderImpl();
+//    SQSReader sqsReader = new SQSReaderImpl();
 
 //    @Scheduled(cron = "0 0/1 * * * ?")
 //    public void send() {

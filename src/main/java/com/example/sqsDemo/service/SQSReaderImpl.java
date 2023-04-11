@@ -1,20 +1,21 @@
 package com.example.sqsDemo.service;
 
+import com.example.sqsDemo.config.SqsConfig;
 import com.example.sqsDemo.entity.MessageSending;
 import com.example.sqsDemo.utils.JsonConverter;
 import com.example.sqsDemo.utils.SQSConstant;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.sqs.SqsClient;
-import software.amazon.awssdk.services.sqs.model.DeleteMessageRequest;
-import software.amazon.awssdk.services.sqs.model.Message;
-import software.amazon.awssdk.services.sqs.model.ReceiveMessageRequest;
-import software.amazon.awssdk.services.sqs.model.SendMessageRequest;
+import software.amazon.awssdk.services.sqs.model.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -22,32 +23,61 @@ import java.util.UUID;
 
 @Service
 public class SQSReaderImpl implements SQSReader {
+
+
+    private static final String QUEUE_URL = "arn:aws:sqs:us-west-2:123456789012:my-queue";
+
+
+
     Logger logger = LoggerFactory.getLogger(SQSReaderImpl.class);
 
-    //NOTE: @Bean
+    @Value("${cloud.aws.end-point.uri}")
+    private String endpoint;
     //Using ARN
-    //Tích hợp pull vs mes vs delete
-    private SqsClient sqsClient = SqsClient.builder()
-            .credentialsProvider(StaticCredentialsProvider.create(AwsBasicCredentials.create(SQSConstant.ACCESS_KEY, SQSConstant.SECRET_KEY)))
-            .region(Region.of(SQSConstant.REGION)).build();
+    //Tích hợp pull vs mes vs delete -- sẽ có issue khi pull về rồi xoá, thì nếu co vấn đề khi xử lý message sẽ mất luôn message
 
-    //Update response to boolean
+    @Autowired
+    private  SqsClient sqsClient;
+
+    @Autowired
+    @Qualifier("sqsClient2")
+    private  SqsClient sqsClient2;
+
     @Override
-    public Boolean sendMessage(String topicName, String message, String email) {
+    public boolean sendMessage(String topicName, String message, String email) {
         MessageSending messageSending = new MessageSending(topicName, message, email, null, null);
         try {
             SendMessageRequest sendMessageRequest = SendMessageRequest.builder()
-                    .queueUrl(SQSConstant.ENDPOINT)
+                    .queueUrl(endpoint)
                     .messageBody(JsonConverter.convertToJson(messageSending))
                     .messageDeduplicationId(UUID.randomUUID().toString())
                     .messageGroupId(topicName)
                     .build();
 
             logger.info("Sending message: "+ SQSConstant.QUEUE_NAME);
-            sqsClient.sendMessage(sendMessageRequest);
-            logger.info("Sent message success! ");
+            return sqsClient2.sendMessage(sendMessageRequest).sdkHttpResponse().isSuccessful();
         } catch (Exception e) {
             logger.error("Problem when sending message");
+            return false;
+        }
+    }
+
+    @Override
+    public boolean sendMessage2(String topicName, String message, String email) {
+        MessageSending messageSending = new MessageSending(topicName, message, email, null, null);
+        try {
+            SendMessageRequest sendMessageRequest = SendMessageRequest.builder()
+                    .queueUrl("arn:aws:sqs:ap-southeast-1:037992980630:demo1.fifo")
+                    .messageBody(JsonConverter.convertToJson(messageSending))
+                    .messageDeduplicationId(UUID.randomUUID().toString())
+                    .messageGroupId(topicName)
+                    .build();
+
+            logger.info("Sending message: "+ SQSConstant.QUEUE_NAME);
+            return sqsClient.sendMessage(sendMessageRequest).sdkHttpResponse().isSuccessful();
+        } catch (Exception e) {
+            logger.error("Problem when sending message");
+            return false;
         }
     }
 
@@ -56,7 +86,7 @@ public class SQSReaderImpl implements SQSReader {
         List<MessageSending> messages = new ArrayList<>();
         try {
             ReceiveMessageRequest receiveMessageRequest = ReceiveMessageRequest.builder()
-                    .queueUrl(SQSConstant.ENDPOINT)
+                    .queueUrl(endpoint)
                     .maxNumberOfMessages(3)
                     .waitTimeSeconds(20)
                     .build();
@@ -76,7 +106,7 @@ public class SQSReaderImpl implements SQSReader {
     public Flux<MessageSending> pullMessagesWebFlux() {
         return Flux.defer(() -> {
             ReceiveMessageRequest receiveMessageRequest = ReceiveMessageRequest.builder()
-                    .queueUrl(SQSConstant.ENDPOINT)
+                    .queueUrl(endpoint)
                     .maxNumberOfMessages(3)
                     .waitTimeSeconds(20)
                     .build();
@@ -97,7 +127,7 @@ public class SQSReaderImpl implements SQSReader {
     public void deleteMessage(String messageId, String receiptHandle) {
         try {
             DeleteMessageRequest deleteRequest = DeleteMessageRequest.builder()
-                    .queueUrl(SQSConstant.ENDPOINT)
+                    .queueUrl(endpoint)
                     .receiptHandle(receiptHandle)
                     .build();
             sqsClient.deleteMessage(deleteRequest);

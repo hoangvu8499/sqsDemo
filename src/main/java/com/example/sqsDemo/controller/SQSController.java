@@ -3,6 +3,7 @@ package com.example.sqsDemo.controller;
 import com.example.sqsDemo.entity.MessageSending;
 import com.example.sqsDemo.service.SQSReader;
 import com.example.sqsDemo.service.SQSReaderImpl;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -12,11 +13,13 @@ import java.util.List;
 
 @RestController
 public class SQSController {
-    SQSReader sqsReader = new SQSReaderImpl();
+
+    @Autowired
+    SQSReader sqsReader;
 
     @GetMapping("/send")
-    public void sendMessageToQueue(@RequestParam String topic, @RequestParam String message, @RequestParam String email) {
-        sqsReader.sendMessage(topic, message, email);
+    public boolean sendMessageToQueue(@RequestParam String topic, @RequestParam String message, @RequestParam String email) {
+        return sqsReader.sendMessage2(topic, message, email);
     }
 
     @GetMapping("/pull")
