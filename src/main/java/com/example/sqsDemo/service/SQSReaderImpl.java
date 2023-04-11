@@ -18,31 +18,34 @@ import software.amazon.awssdk.services.sqs.model.SendMessageRequest;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
 @Service
 public class SQSReaderImpl implements SQSReader {
     Logger logger = LoggerFactory.getLogger(SQSReaderImpl.class);
 
+    //NOTE: @Bean
+    //Using ARN
+    //Tích hợp pull vs mes vs delete
     private SqsClient sqsClient = SqsClient.builder()
             .credentialsProvider(StaticCredentialsProvider.create(AwsBasicCredentials.create(SQSConstant.ACCESS_KEY, SQSConstant.SECRET_KEY)))
             .region(Region.of(SQSConstant.REGION)).build();
 
+    //Update response to boolean
     @Override
-    public void sendMessage(String topicName, String message, String email) {
+    public Boolean sendMessage(String topicName, String message, String email) {
         MessageSending messageSending = new MessageSending(topicName, message, email, null, null);
         try {
-
             SendMessageRequest sendMessageRequest = SendMessageRequest.builder()
                     .queueUrl(SQSConstant.ENDPOINT)
                     .messageBody(JsonConverter.convertToJson(messageSending))
                     .messageDeduplicationId(UUID.randomUUID().toString())
-                    .messageGroupId(UUID.randomUUID().toString())
+                    .messageGroupId(topicName)
                     .build();
 
-            logger.info("Sending message: ", 100, SQSConstant.QUEUE_NAME);
+            logger.info("Sending message: "+ SQSConstant.QUEUE_NAME);
             sqsClient.sendMessage(sendMessageRequest);
+            logger.info("Sent message success! ");
         } catch (Exception e) {
             logger.error("Problem when sending message");
         }
@@ -99,7 +102,6 @@ public class SQSReaderImpl implements SQSReader {
                     .build();
             sqsClient.deleteMessage(deleteRequest);
             logger.info("Deleted message with ID " + messageId);
-
         } catch (Exception e) {
             logger.error("Problem when delete message with ID: " + messageId);
         }
