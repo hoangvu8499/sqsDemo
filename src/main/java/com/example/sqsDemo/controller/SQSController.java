@@ -19,6 +19,11 @@ public class SQSController {
 
     @GetMapping("/send")
     public boolean sendMessageToQueue(@RequestParam String topic, @RequestParam String message, @RequestParam String email) {
+        return sqsReader.sendMessage(topic, message, email);
+    }
+
+    @GetMapping("/sendarn")
+    public boolean sendMessageToQueue2(@RequestParam String topic, @RequestParam String message, @RequestParam String email) {
         return sqsReader.sendMessage2(topic, message, email);
     }
 

@@ -8,6 +8,10 @@ cloud:
       secret-key: RZlg/+qsDKtLGXgYtrBhCn/wep38UVyrHVzraYcy
     end-point:
       uri: https://sqs.ap-southeast-1.amazonaws.com/037992980630/demo1.fifo
+
+sqs:
+  queue-name: demo1.fifo
+
 spring:
   mail:
     host: smtp.gmail.com

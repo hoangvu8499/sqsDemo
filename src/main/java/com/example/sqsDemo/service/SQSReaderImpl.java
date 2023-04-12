@@ -55,7 +55,7 @@ public class SQSReaderImpl implements SQSReader {
                     .build();
 
             logger.info("Sending message: "+ SQSConstant.QUEUE_NAME);
-            return sqsClient2.sendMessage(sendMessageRequest).sdkHttpResponse().isSuccessful();
+            return sqsClient.sendMessage(sendMessageRequest).sdkHttpResponse().isSuccessful();
         } catch (Exception e) {
             logger.error("Problem when sending message");
             return false;
@@ -74,7 +74,7 @@ public class SQSReaderImpl implements SQSReader {
                     .build();
 
             logger.info("Sending message: "+ SQSConstant.QUEUE_NAME);
-            return sqsClient.sendMessage(sendMessageRequest).sdkHttpResponse().isSuccessful();
+            return sqsClient2.sendMessage(sendMessageRequest).sdkHttpResponse().isSuccessful();
         } catch (Exception e) {
             logger.error("Problem when sending message");
             return false;

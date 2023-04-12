@@ -92,6 +92,14 @@
 			<version>2.2.5.RELEASE</version>
 		</dependency>
 
+		<!-- https://mvnrepository.com/artifact/com.amazonaws/amazon-sqs-java-messaging-lib -->
+		<dependency>
+			<groupId>com.amazonaws</groupId>
+			<artifactId>amazon-sqs-java-messaging-lib</artifactId>
+			<version>1.0.8</version>
+		</dependency>
+
+
 	</dependencies>
 
 	<build>
